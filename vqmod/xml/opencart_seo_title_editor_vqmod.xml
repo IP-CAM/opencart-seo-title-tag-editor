@@ -1,0 +1,526 @@
+<modification>
+	<id>Opencart SEO Title Tag Editor Complete</id>
+	<version>2.1</version>
+	<vqmver>2.3</vqmver>
+	<author>www.jrnielsen.com</author>
+
+	<!-- Database Table Exists Function
+	############################################ -->
+	<file name="system/library/db.php">
+		<operation>
+			<search position="before"><![CDATA[
+				function query($sql) {
+			]]></search>
+			<add><![CDATA[
+				public function octCheckTable($table, $column) {
+					//check if column exists.  If not, then make it exist.
+					$sql = "DESC " . DB_PREFIX . "{$table} {$column}";
+					$query = $this->query($sql);
+					if (!$query->num_rows) {
+						$sql = "ALTER TABLE " . DB_PREFIX . "{$table} ADD {$column} VARCHAR(255) NOT NULL DEFAULT ''";
+						$this->query($sql);
+					}
+				}
+			]]></add>
+		</operation>
+	</file>
+
+	<!-- Info Pop
+	############################################ -->
+	<file name="admin/view/template/common/footer.tpl">
+		<operation>
+			<search position="before"><![CDATA[
+				</body>
+			]]></search>
+			<add><![CDATA[
+				<script type="text/javascript">
+					function titlerPop() {
+						var html = '<h3 style="text-align: center; border-bottom: 1px solid black; padding-bottom: 10px;">Edit Title Tags for SEO</h3>';
+						html += '<div style="text-align: justify;">';
+						html += '<p>Search Engine Optimize your online store by altering the value of the HTML &lt;title&gt; tag for product, category, manufacturer, and information pages.</p>';
+						html += '<p>To use the default OpenCart title, simply leave this field blank.</p>';
+						html += '<p>You can set global prefix and suffix text for your titles in the system settings for your store under the store tab.</p>';
+						html += '</div>';
+						newWin = window.open('','titlerpop', 'height=330,width=400,menubar=no,status=no,location=no,toolbar=no');
+						newWin.document.body.innerHTML = html;
+						newWin.document.title = "Title Tag Editor";
+					}
+				</script>
+			]]></add>
+		</operation>
+	</file>
+
+	<!-- Global Title Settings
+	############################################ -->
+	<file name="admin/view/template/setting/setting.tpl">
+		<operation>
+			<!-- add the title input to the settings page -->
+			<search position="before" offset="2"><![CDATA[
+				<td><?php echo $entry_meta_description; ?></td>
+			]]></search>
+			<add><![CDATA[
+				<tr>
+					<td>Title Tag Prefix: <sup><a href="javascript:titlerPop();">?</a></sup></td>
+					<td><input type="text" name="config_oct_title_prefix" value="<?php echo $config_oct_title_prefix; ?>" /></td>
+				</tr>
+				<tr>
+					<td>Title Tag Suffix: <sup><a href="javascript:titlerPop();">?</a></sup></td>
+					<td><input type="text" name="config_oct_title_suffix" value="<?php echo $config_oct_title_suffix; ?>" /></td>
+				</tr>
+				<tr>
+					<td>Show Prefix and Suffix on Home</td>
+					<td>
+						<input type="radio" name="config_oct_show_on_home" value="1" <?php echo $config_oct_show_on_home == 1 ? 'checked="checked"' : ''; ?> />
+						Yes
+						<input type="radio" name="config_oct_show_on_home" value="0" <?php echo $config_oct_show_on_home == 0 ? 'checked="checked"' : ''; ?> />
+						No
+					</td>
+				</tr>
+			]]></add>
+		</operation>
+	</file>
+
+	<!-- make sure the custom settings have a value -->
+	<file name="admin/controller/setting/setting.php">
+		<operation>
+			<search position="after"><![CDATA[
+				$this->data['token'] = $this->session->data['token'];
+			]]></search>
+			<add><![CDATA[
+				//set the prefix
+				if (isset($this->request->post['config_oct_title_prefix'])) {
+					$this->data['config_oct_title_prefix'] = $this->request->post['config_oct_title_prefix'];
+				} else if ($this->config->has('config_oct_title_prefix')) {
+					$this->data['config_oct_title_prefix'] = $this->config->get('config_oct_title_prefix');
+				} else {
+					$this->data['config_oct_title_prefix'] = '';
+				}
+
+				//set the suffix
+				if (isset($this->request->post['config_oct_title_suffix'])) {
+					$this->data['config_oct_title_suffix'] = $this->request->post['config_oct_title_suffix'];
+				} else if ($this->config->has('config_oct_title_suffix')) {
+					$this->data['config_oct_title_suffix'] = $this->config->get('config_oct_title_suffix');
+				} else {
+					$this->data['config_oct_title_suffix'] = '';
+				}
+
+				//set the show global on home boolean
+				if (isset($this->request->post['config_oct_show_on_home'])) {
+					$this->data['config_oct_show_on_home'] = $this->request->post['config_oct_show_on_home'];
+				} else if ($this->config->has('config_oct_show_on_home')) {
+					$this->data['config_oct_show_on_home'] = $this->config->get('config_oct_show_on_home');
+				} else {
+					//default to show on home
+					$this->data['config_oct_show_on_home'] = 1;
+				}
+			]]></add>
+		</operation>
+	</file>
+
+	<!-- allow custom prefix and suffix for multi store -->
+	<file name="admin/view/template/setting/store_form.tpl">
+		<operation>
+			<!-- add the title input to the settings page -->
+			<search position="before" offset="2"><![CDATA[
+				<td><?php echo $entry_meta_description; ?></td>
+			]]></search>
+			<add><![CDATA[
+				<tr>
+					<td>Title Tag Prefix: <sup><a href="javascript:titlerPop();">?</a></sup></td>
+					<td><input type="text" name="config_oct_title_prefix" value="<?php echo $config_oct_title_prefix; ?>" /></td>
+				</tr>
+				<tr>
+					<td>Title Tag Suffix: <sup><a href="javascript:titlerPop();">?</a></sup></td>
+					<td><input type="text" name="config_oct_title_suffix" value="<?php echo $config_oct_title_suffix; ?>" /></td>
+				</tr>
+				<tr>
+					<td>Show Prefix and Suffix on Home</td>
+					<td>
+						<input type="radio" name="config_oct_show_on_home" value="1" <?php echo $config_oct_show_on_home == 1 ? 'checked="checked"' : ''; ?> />
+						Yes
+						<input type="radio" name="config_oct_show_on_home" value="0" <?php echo $config_oct_show_on_home == 0 ? 'checked="checked"' : ''; ?> />
+						No
+					</td>
+				</tr>
+			]]></add>
+		</operation>
+	</file>
+
+	<!-- make sure the custom settings have a value -->
+	<file name="admin/controller/setting/store.php">
+		<operation>
+			<search position="after"><![CDATA[
+				$this->data['token'] = $this->session->data['token'];
+			]]></search>
+			<add><![CDATA[
+				//set the prefix
+				if (isset($this->request->post['config_oct_title_prefix'])) {
+					$this->data['config_oct_title_prefix'] = $this->request->post['config_oct_title_prefix'];
+				} elseif (isset($store_info['config_oct_title_prefix'])) {
+					$this->data['config_oct_title_prefix'] = $store_info['config_oct_title_prefix'];
+				} else {
+					$this->data['config_oct_title_prefix'] = '';
+				}
+
+				//set the suffix
+				if (isset($this->request->post['config_oct_title_suffix'])) {
+					$this->data['config_oct_title_suffix'] = $this->request->post['config_oct_title_suffix'];
+				} elseif (isset($store_info['config_oct_title_suffix'])) {
+					$this->data['config_oct_title_suffix'] = $store_info['config_oct_title_suffix'];
+				} else {
+					$this->data['config_oct_title_suffix'] = '';
+				}
+
+				//set the show global on home boolean
+				if (isset($this->request->post['config_oct_show_on_home'])) {
+					$this->data['config_oct_show_on_home'] = $this->request->post['config_oct_show_on_home'];
+				} else if (isset($store_info['config_oct_show_on_home'])) {
+					$this->data['config_oct_show_on_home'] = $store_info['config_oct_show_on_home'];
+				} else {
+					//default to show on home
+					$this->data['config_oct_show_on_home'] = 1;
+				}
+			]]></add>
+		</operation>
+	</file>
+
+	<!-- update the title globally to include the pre and post text if it is available -->
+	<file name="catalog/controller/common/header.php">
+		<operation>
+			<search position="after"><![CDATA[
+				$this->data['title'] = $this->document->getTitle();
+			]]></search>
+			<add><![CDATA[
+				//determine if global prefix and suffix should be hidden on home page.
+				$show_global = true;
+				if ( ( ! array_key_exists( 'route', $this->request->get ) || $this->request->get['route'] == 'common/home' )
+					&& $this->config->has('config_oct_show_on_home')
+					&& $this->config->get('config_oct_show_on_home') == 0
+				) {
+					$show_global = false;
+				}
+
+				if ( true == $show_global ) {
+					if ( $this->config->has('config_oct_title_suffix') && $this->config->get('config_oct_title_suffix' ) != '') {
+						$this->data['title'] .= " " . $this->config->get('config_oct_title_suffix');
+					}
+					if ( $this->config->has('config_oct_title_prefix') && $this->config->get('config_oct_title_prefix') != '' ) {
+						$this->data['title'] = $this->config->get('config_oct_title_prefix') . " " . $this->data['title'];
+					}
+				}
+			]]></add>
+		</operation>
+	</file>
+
+	<!-- Category Page Mod
+	############################################ -->
+	<file name="admin/view/template/catalog/category_form.tpl">
+		<operation>
+			<!-- add the oct_category_title input to the category page -->
+			<search position="before" offset="2"><![CDATA[
+				<td><?php echo $entry_meta_description; ?></td>
+			]]></search>
+			<add><![CDATA[
+				<tr>
+					<td>Title Tag: <sup><a href="javascript:titlerPop();">?</a></sup></td>
+					<td><input type="text" size="100" name="category_description[<?php echo $language['language_id']; ?>][oct_category_title]" value="<?php echo isset($category_description[$language['language_id']]) ? $category_description[$language['language_id']]['oct_category_title'] : ''; ?>" /></td>
+				</tr>
+			]]></add>
+		</operation>
+	</file>
+
+	<file name="admin/controller/catalog/category.php">
+		<operation>
+			<!-- call the db check function -->
+			<search position="after"><![CDATA[
+				function getForm() {
+			]]></search>
+			<add><![CDATA[
+				$this->db->octCheckTable('category_description', 'oct_category_title');
+			]]></add>
+		</operation>
+	</file>
+
+	<file name="admin/model/catalog/category.php">
+		<operation>
+			<!-- add a query to include the title tag. this matches for both update and insert -->
+			<search position="after"><![CDATA[
+				"', meta_keyword = '" . $this->db->escape($value['meta_keyword'])
+			]]></search>
+			<add><![CDATA[
+				if(isset($value['oct_category_title'])) {
+					if (!isset($category_id)) {
+						$octitler_category_id = $this->db->getLastId();
+					} else {
+						$octitler_category_id = $category_id;
+					}
+					$this->db->query("UPDATE " . DB_PREFIX . "category_description SET oct_category_title = '" . $this->db->escape($value['oct_category_title']) . "' WHERE category_id = '" . (int)$octitler_category_id . "' AND language_id = '" . (int)$language_id . "'");
+					unset($octitler_category_id);
+				}
+			]]></add>
+		</operation>
+		<operation>
+			<!-- update the retrieval query to include oct_category_title-->
+			<search position="before"><![CDATA[
+				'meta_keyword'     => $result['meta_keyword'],
+			]]></search>
+			<add><![CDATA[
+				'oct_category_title' => $result['oct_category_title'],
+			]]></add>
+		</operation>
+	</file>
+
+	<file name="catalog/controller/product/category.php">
+		<operation>
+			<!-- Update title logic -->
+			<search position="after"><![CDATA[
+				$this->document->setTitle($category_info['name']);
+			]]></search>
+			<add><![CDATA[
+				if (isset($category_info["oct_category_title"]) && $category_info["oct_category_title"] != "") {
+					$this->document->setTitle($category_info['oct_category_title']);
+				}
+			]]></add>
+		</operation>
+	</file>
+
+	<!-- Product Page Mod
+	############################################ -->
+	<file name="admin/view/template/catalog/product_form.tpl">
+		<operation>
+			<!-- add the oct_product_title input to the product page -->
+			<search position="before" offset="2"><![CDATA[
+				<td><?php echo $entry_meta_description; ?></td>
+			]]></search>
+			<add><![CDATA[
+				<tr>
+					<td>Title Tag: <sup><a href="javascript:titlerPop();">?</a></sup></td>
+					<td><input type="text" size="100" name="product_description[<?php echo $language['language_id']; ?>][oct_product_title]" value="<?php echo isset($product_description[$language['language_id']]) ? $product_description[$language['language_id']]['oct_product_title'] : ''; ?>" /></td>
+				</tr>
+			]]></add>
+		</operation>
+	</file>
+
+	<file name="admin/controller/catalog/product.php">
+		<operation>
+			<!-- call the db check function -->
+			<search position="after"><![CDATA[
+				function getForm() {
+			]]></search>
+			<add><![CDATA[
+				$this->db->octCheckTable('product_description', 'oct_product_title');
+			]]></add>
+		</operation>
+	</file>
+
+	<file name="admin/model/catalog/product.php">
+		<operation>
+			<!-- add a query to include the title tag. this matches for both update and insert -->
+			<search position="after"><![CDATA[
+				"', meta_keyword = '" . $this->db->escape($value['meta_keyword'])
+			]]></search>
+			<add><![CDATA[
+				if(isset($value['oct_product_title'])) {
+					if (!isset($product_id)) {
+						$octitler_product_id = $this->db->getLastId();
+					} else {
+						$octitler_product_id = $product_id;
+					}
+					$this->db->query("UPDATE " . DB_PREFIX . "product_description SET oct_product_title = '" . $this->db->escape($value['oct_product_title']) . "' WHERE product_id = '" . (int)$octitler_product_id . "' AND language_id = '" . (int)$language_id . "'");
+					unset($octitler_product_id);
+				}
+			]]></add>
+		</operation>
+		<operation>
+			<!-- update the retrieval query to include oct_product_title -->
+			<search position="before"><![CDATA[
+				'meta_keyword'     => $result['meta_keyword'],
+			]]></search>
+			<add><![CDATA[
+				'oct_product_title' => $result['oct_product_title'],
+			]]></add>
+		</operation>
+	</file>
+	<file name="catalog/controller/product/product.php">
+		<operation>
+			<!-- Update title logic -->
+			<search position="after"><![CDATA[
+				$this->document->setTitle($product_info['name']);
+			]]></search>
+			<add><![CDATA[
+				if (isset($product_info["oct_product_title"]) && $product_info["oct_product_title"] != "") {
+					$this->document->setTitle($product_info['oct_product_title']);
+				}
+			]]></add>
+		</operation>
+	</file>
+
+	<!-- make sure the model is retrieving the title tag. this necessity was introduced in 1541, so skip if not found -->
+	<file name="catalog/model/catalog/product.php">
+		<operation error="skip">
+			<search position="before"><![CDATA[
+				return array(
+			]]></search>
+			<add><![CDATA[
+				$oct_product_title = (isset($query->row['oct_product_title']) ? $query->row['oct_product_title'] : '');
+			]]></add>
+		</operation>
+		<operation error="skip">
+			<search position="after"><![CDATA[
+				return array(
+			]]></search>
+			<add><![CDATA[
+				'oct_product_title' => $oct_product_title,
+			]]></add>
+		</operation>
+	</file>
+
+	<!-- Information Page Mod
+	################################################# -->
+	<file name="admin/view/template/catalog/information_form.tpl">
+		<operation>
+			<!-- add the oct_information_title input to the information page -->
+			<search position="before" offset="2"><![CDATA[
+				<td><span class="required">*</span> <?php echo $entry_description; ?></td>
+			]]></search>
+			<add><![CDATA[
+				<tr>
+					<td>Title Tag: <sup><a href="javascript:titlerPop();">?</a></sup></td>
+					<td><input type="text" size="100" name="information_description[<?php echo $language['language_id']; ?>][oct_information_title]" value="<?php echo isset($information_description[$language['language_id']]) ? $information_description[$language['language_id']]['oct_information_title'] : ''; ?>" /></td>
+				</tr>
+			]]></add>
+		</operation>
+	</file>
+
+	<file name="admin/controller/catalog/information.php">
+		<operation>
+			<!-- call the db check function -->
+			<search position="after"><![CDATA[
+				function getForm() {
+			]]></search>
+			<add><![CDATA[
+				$this->db->octCheckTable('information_description', 'oct_information_title');
+			]]></add>
+		</operation>
+	</file>
+
+	<file name="admin/model/catalog/information.php">
+		<operation>
+			<!-- add a query to include the title tag. this matches for both update and insert -->
+			<search position="after" offset="1"><![CDATA[
+				foreach ($data['information_description'] as $language_id => $value) {
+			]]></search>
+			<add><![CDATA[
+				if(isset($value['oct_information_title'])) {
+					if (!isset($information_id)) {
+						$octitler_information_id = $this->db->getLastId();
+					} else {
+						$octitler_information_id = $information_id;
+					}
+					$this->db->query("UPDATE " . DB_PREFIX . "information_description SET oct_information_title = '" . $this->db->escape($value['oct_information_title']) . "' WHERE information_id = '" . (int)$octitler_information_id . "' AND language_id = '" . (int)$language_id . "'");
+					unset($octitler_information_id);
+				}
+			]]></add>
+		</operation>
+		<operation>
+			<!-- update the retrieval query to include oct_information_title -->
+			<search position="before"><![CDATA[
+				'description' => $result['description']
+			]]></search>
+			<add><![CDATA[
+				'oct_information_title' => $result['oct_information_title'],
+			]]></add>
+		</operation>
+	</file>
+
+	<file name="catalog/controller/information/information.php">
+		<operation>
+			<!-- Update title logic -->
+			<search position="after"><![CDATA[
+				$this->document->setTitle($information_info['title']);
+			]]></search>
+			<add><![CDATA[
+				if (isset($information_info["oct_information_title"]) && $information_info["oct_information_title"] != "") {
+					$this->document->setTitle($information_info['oct_information_title']);
+				}
+			]]></add>
+		</operation>
+	</file>
+
+	<!-- Manufacturer Mod
+	################################################### -->
+	<file name="admin/view/template/catalog/manufacturer_form.tpl">
+		<operation>
+			<!-- add the oct_manufacturer_title input to the information page -->
+			<search position="before" offset="2"><![CDATA[
+				 <td><?php echo $entry_store; ?></td>
+			]]></search>
+			<add><![CDATA[
+				<tr>
+					<td>Title Tag: <sup><a href="javascript:titlerPop();">?</a></sup></td>
+					<td><input type="text" size="100" name="oct_manufacturer_title" value="<?php echo $oct_manufacturer_title; ?>" /></td>
+				</tr>
+			]]></add>
+		</operation>
+	</file>
+
+	<file name="admin/controller/catalog/manufacturer.php">
+		<operation>
+			<!-- call the db check function -->
+			<search position="after"><![CDATA[
+				function getForm() {
+			]]></search>
+			<add><![CDATA[
+				$this->db->octCheckTable('manufacturer', 'oct_manufacturer_title');
+			]]></add>
+		</operation>
+		<operation>
+			<!-- ensure that the title tag is retrieved for the form -->
+			<search position="before"><![CDATA[
+				if (isset($this->request->post['name'])) {
+			]]></search>
+			<add><![CDATA[
+				if (isset($this->request->post['oct_manufacturer_title'])) {
+					$this->data['oct_manufacturer_title'] = $this->request->post['oct_manufacturer_title'];
+				} elseif (!empty($manufacturer_info)) {
+					$this->data['oct_manufacturer_title'] = $manufacturer_info['oct_manufacturer_title'];
+				} else {
+					$this->data['oct_manufacturer_title'] = '';
+				}
+			]]></add>
+		</operation>
+	</file>
+	<file name="admin/model/catalog/manufacturer.php">
+		<operation>
+			<!-- add a query to include the title tag. this matches for both update and insert -->
+			<search position="before"><![CDATA[
+				if (isset($data['image'])) {
+			]]></search>
+			<add><![CDATA[
+				if(isset($data['oct_manufacturer_title'])) {
+					if (!isset($manufacturer_id)) {
+						$octitler_manufacturer_id = $this->db->getLastId();
+					} else {
+						$octitler_manufacturer_id = $manufacturer_id;
+					}
+					$this->db->query("UPDATE " . DB_PREFIX . "manufacturer SET oct_manufacturer_title = '" . $this->db->escape($data['oct_manufacturer_title']) . "' WHERE manufacturer_id = '" . (int)$octitler_manufacturer_id . "'");
+					unset($octitler_manufacturer_id);
+				}
+			]]></add>
+		</operation>
+	</file>
+	<file name="catalog/controller/product/manufacturer.php">
+		<operation>
+			<!-- Update title logic -->
+			<search position="after"><![CDATA[
+				$this->document->setTitle($manufacturer_info['name']);
+			]]></search>
+			<add><![CDATA[
+				if (isset($manufacturer_info["oct_manufacturer_title"]) && $manufacturer_info["oct_manufacturer_title"] != "") {
+					$this->document->setTitle($manufacturer_info['oct_manufacturer_title']);
+				}
+			]]></add>
+		</operation>
+	</file>
+</modification>
